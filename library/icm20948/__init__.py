@@ -55,7 +55,7 @@ AK09916_CNTL2_MODE_TEST = 16
 AK09916_CNTL3 = 0x32
 
 
-class icm20948:
+class ICM20948:
     def write(self, reg, value):
         """Write byte to the sensor."""
         self._bus.write_byte_data(self._addr, reg, value)
@@ -222,7 +222,7 @@ class icm20948:
 
         self.bank(0)
         if not self.read(ICM20948_WHO_AM_I) == CHIP_ID:
-            raise RuntimeError("Unable to find ICM20940")
+            raise RuntimeError("Unable to find ICM20948")
 
         self.write(ICM20948_PWR_MGMT_1, 0x01)
         self.write(ICM20948_PWR_MGMT_2, 0x00)
@@ -255,7 +255,7 @@ class icm20948:
 
 
 if __name__ == "__main__":
-    imu = icm20948()
+    imu = ICM20948()
 
     while True:
         x, y, z = imu.read_magnetometer_data()
