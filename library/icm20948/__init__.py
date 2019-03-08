@@ -1,16 +1,44 @@
 import time
 import struct
-from smbus import SMBus
 
 CHIP_ID = 0xEA
 I2C_ADDR = 0x68
+ICM20948_BANK_SEL = 0x7f
+
+ICM20948_I2C_MST_ODR_CONFIG = 0x00
+ICM20948_I2C_MST_CTRL = 0x01
+ICM20948_I2C_MST_DELAY_CTRL = 0x02
+ICM20948_I2C_SLV0_ADDR = 0x03
+ICM20948_I2C_SLV0_REG = 0x04
+ICM20948_I2C_SLV0_CTRL = 0x05
+ICM20948_I2C_SLV0_DO = 0x06
+ICM20948_EXT_SLV_SENS_DATA_00 = 0x3B
+
+ICM20948_GYRO_SMPLRT_DIV = 0x00
+ICM20948_GYRO_CONFIG_1 = 0x01
+ICM20948_GYRO_CONFIG_2 = 0x02
+
+# Bank 0
+ICM20948_WHO_AM_I = 0x00
+ICM20948_USER_CTRL = 0x03
+ICM20948_PWR_MGMT_1 = 0x06
+ICM20948_PWR_MGMT_2 = 0x07
+ICM20948_INT_PIN_CFG = 0x0F
+
+ICM20948_ACCEL_SMPLRT_DIV_1 = 0x10
+ICM20948_ACCEL_SMPLRT_DIV_2 = 0x11
+ICM20948_ACCEL_INTEL_CTRL = 0x12
+ICM20948_ACCEL_WOM_THR = 0x13
+ICM20948_ACCEL_CONFIG = 0x14
+ICM20948_ACCEL_XOUT_H = 0x2D
+ICM20948_GRYO_XOUT_H = 0x33
 
 AK09916_I2C_ADDR = 0x0c
 AK09916_CHIP_ID = 0x09
 AK09916_WIA = 0x01
 AK09916_ST1 = 0x10
 AK09916_ST1_DOR = 0b00000010   # Data overflow bit
-AK09916_ST1_DRDY = 0b00000001  # Data ready bit
+AK09916_ST1_DRDY = 0b00000001  # Data self.ready bit
 AK09916_HXL = 0x11
 AK09916_ST2 = 0x18
 AK09916_ST2_HOFL = 0b00001000  # Magnetic sensor overflow bit
@@ -26,141 +54,174 @@ AK09916_CNTL2_MODE_TEST = 16
 AK09916_CNTL3 = 0x32
 
 
+class icm20948:
+    def write(self, reg, value):
+        """Write byte to the sensor."""
+        self._bus.write_byte_data(self._addr, reg, value)
+        time.sleep(0.0001)
 
-bus = SMBus(1)
+    def read(self, reg):
+        """Read byte from the sensor."""
+        return self._bus.read_byte_data(self._addr, reg)
+        time.sleep(0.0001)
 
-def write(reg, value):
-    bus.write_byte_data(I2C_ADDR, reg, value)
-    time.sleep(0.0001)
+    def read_bytes(self, reg, length=1):
+        """Read byte(s) from the sensor."""
+        return self._bus.read_i2c_block_data(self._addr, reg, length)
 
-def read(reg):
-    return bus.read_byte_data(I2C_ADDR, reg)
-    time.sleep(0.0001)
+    def bank(self, value):
+        """Switch register self.bank."""
+        self.write(ICM20948_BANK_SEL, value << 4)
 
-def read_bytes(reg, length=1):
-    return bus.read_i2c_block_data(I2C_ADDR, reg, length)
+    def mag_write(self, reg, value):
+        """Write a byte to the slave magnetometer."""
+        self.bank(3)
+        self.write(ICM20948_I2C_SLV0_ADDR, AK09916_I2C_ADDR)  # Write one byte
+        self.write(ICM20948_I2C_SLV0_REG, reg)
+        self.write(ICM20948_I2C_SLV0_DO, value)
+        self.bank(0)
 
-def bank(value):
-    write(0x7f, value << 4)
+    def mag_read(self, reg):
+        """Read a byte from the slave magnetometer."""
+        self.bank(3)
+        self.write(ICM20948_I2C_SLV0_CTRL, 0x80 | 1)  # Read 1 byte
+        self.write(ICM20948_I2C_SLV0_ADDR, AK09916_I2C_ADDR | 0x80)
+        self.write(ICM20948_I2C_SLV0_REG, reg)
+        self.write(ICM20948_I2C_SLV0_DO, 0xff)
+        self.bank(0)
+        return self.read(ICM20948_EXT_SLV_SENS_DATA_00)
 
-def mag_write(reg, value):
-    bank(3)
-    write(0x03, AK09916_I2C_ADDR)  # Write one byte
-    write(0x04, reg)
-    write(0x06, value)
-    bank(0)
+    def mag_read_bytes(self, reg, length=1):
+        """Read up to 24 bytes from the slave magnetometer."""
+        self.bank(3)
+        self.write(ICM20948_I2C_SLV0_CTRL, 0x80 | 0x08 | length)
+        self.write(ICM20948_I2C_SLV0_ADDR, AK09916_I2C_ADDR | 0x80)
+        self.write(ICM20948_I2C_SLV0_REG, reg)
+        self.write(ICM20948_I2C_SLV0_DO, 0xff)
+        self.bank(0)
+        return self.read_bytes(ICM20948_EXT_SLV_SENS_DATA_00, length)
 
-def mag_read(reg):
-    bank(3)
-    write(0x03, AK09916_I2C_ADDR | 0x80)
-    write(0x04, reg)
-    write(0x06, 0xff)
-    bank(0)
-    return read(0x3b)
+    def magnetometer_ready(self):
+        """Check the magnetometer status self.ready bit."""
+        return self.mag_read(AK09916_ST1) & 0x01 > 0
 
-def mag_read_bytes(reg, length=1):
-    value = []
-    for offset in range(length):
-        value.append(mag_read(reg + offset))
-    return value
+    def read_magnetometer_data(self):
+        self.mag_write(AK09916_CNTL2, 0x01)  # Trigger single measurement
+        while not self.magnetometer_ready():
+            time.sleep(0.00001)
 
-def magnetometer_ready():
-    return mag_read(0x10) & 0x01 > 0
+        data = self.mag_read_bytes(AK09916_HXL, 6)
 
-def read_magnetometer_data():
-    mag_write(0x31, 0x01)  # Trigger single measurement
-    while not magnetometer_ready():
-        time.sleep(0.00001)
+        # Read ST2 to confirm self.read finished,
+        # needed for continuous modes
+        # self.mag_read(AK09916_ST2)
 
-    data = mag_read_bytes(0x11, 6)
+        x, y, z = struct.unpack("<hhh", bytearray(data))
 
-    #mag_read(0x18)  # Read ST2 to confirm read finished, needed for continuous modes
+        # Scale for magnetic flux density "uT"
+        # from section 3.3 of the datasheet
+        # This value is constant
+        x *= 0.15
+        y *= 0.15
+        z *= 0.15
 
-    x, y, z = struct.unpack("<hhh", bytearray(data))
+        return x, y, z
 
-    # Scale for magnetic flux density "uT" from section 3.3 of the datasheet
-    x *= 0.15
-    y *= 0.15
-    z *= 0.15
+    def read_accelerometer_gyro_data(self):
+        self.bank(0)
+        data = self.read_bytes(ICM20948_ACCEL_XOUT_H, 12)
 
-    return x, y, z
+        ax, ay, az, gx, gy, gz = struct.unpack(">hhhhhh", bytearray(data))
 
-def read_accelerometer_gyro_data():
-    bank(0)
-    data = read_bytes(0x2D, 12)
+        self.bank(2)
 
-    ax, ay, az, gx, gy, gz = struct.unpack(">hhhhhh", bytearray(data))
+        # Read accelerometer full scale range and
+        # use it to compensate the self.reading to gs
+        scale = (self.read(ICM20948_ACCEL_CONFIG) & 0x06) >> 1
+
+        # scale ranges from section 3.2 of the datasheet
+        gs = [16384.0, 8192.0, 4096.0, 2048.0][scale]
+
+        ax /= gs
+        ay /= gs
+        az /= gs
+
+        # Read back the degrees per second rate and
+        # use it to compensate the self.reading to dps
+        scale = (self.read(ICM20948_GYRO_CONFIG_1) & 0x06) >> 1
+
+        # scale ranges from section 3.1 of the datasheet
+        dps = [131, 65.5, 32.8, 16.4][scale]
+
+        gx /= dps
+        gy /= dps
+        gz /= dps
+
+        return ax, ay, az, gx, gy, gz
+
+    def __init__(self, i2c_addr=I2C_ADDR, i2c_bus=None):
+        self._addr = i2c_addr
+
+        if i2c_bus is None:
+            from smbus import SMBus
+            self._bus = SMBus(1)
+        else:
+            self._bus = i2c_bus
+
+        self.bank(0)
+        if self.read(ICM20948_WHO_AM_I) == CHIP_ID:
+            print("Found ICM20948!")
+        else:
+            print("Unable to find ICM20940")
+
+        self.write(ICM20948_PWR_MGMT_1, 0x01)
+        self.write(ICM20948_PWR_MGMT_2, 0x00)
+
+        self.bank(2)
+
+        # 100Hz sample rate - 1.1 kHz / (1 + rate)
+        self.write(ICM20948_GYRO_SMPLRT_DIV, 0x0A)
+        self.write(ICM20948_GYRO_CONFIG_1, 0b00101001)  # 250 dps
+
+        # Accel sensitivity
+        self.write(ICM20948_ACCEL_CONFIG, 0b00101111)  # +-16g
+
+        # Accel sample rate divider MSB and LSB
+        # 125Hz - 1.125 kHz / (1 + rate)
+        self.write(ICM20948_ACCEL_SMPLRT_DIV_1, 0x00)
+        self.write(ICM20948_ACCEL_SMPLRT_DIV_2, 0x08)
+
+        self.bank(0)
+        self.write(ICM20948_INT_PIN_CFG, 0x30)
+        self.write(ICM20948_USER_CTRL, 0x20)
+
+        self.bank(3)
+        self.write(ICM20948_I2C_MST_CTRL, 0x4D)
+        self.write(ICM20948_I2C_MST_DELAY_CTRL, 0x01)
+
+        if self.mag_read(AK09916_WIA) == AK09916_CHIP_ID:
+            print("Found AK09916")
+        else:
+            print("Unable to find AK09916")
+
+        # Reset the magnetometer
+        self.mag_write(AK09916_CNTL3, 0x01)
+        while self.mag_read(AK09916_CNTL3) == 0x01:
+            time.sleep(0.0001)
 
 
-    bank(2)
+if __name__ == "__main__":
+    imu = icm20948()
 
-    # Read accelerometer full scale range and
-    # use it to compensate the reading to gs
-    scale = (read(0x14) & 0x06) >> 1
+    while True:
+        x, y, z = imu.read_magnetometer_data()
+        ax, ay, az, gx, gy, gz = imu.read_accelerometer_gyro_data()
 
-    # scale ranges from section 3.2 of the datasheet
-    gs = [16384.0, 8192.0, 4096.0, 2048.0][scale]
+        print("""
+Accel: {:05.2f} {:05.2f} {:05.2f}
+Gyro:  {:05.2f} {:05.2f} {:05.2f}
+Mag:   {:05.2f} {:05.2f} {:05.2f}""".format(
+            ax, ay, az, gx, gy, gz, x, y, z
+        ))
 
-    ax /= gs
-    ay /= gs
-    az /= gs
-
-    # Read back the degrees per second rate and 
-    # use it to compensate the reading to dps
-    scale = (read(0x01) & 0x06) >> 1
-
-    # scale ranges from section 3.1 of the datasheet
-    dps = [131, 65.5, 32.8, 16.4][scale]
-
-    gx /= dps
-    gy /= dps
-    gz /= dps
-
-    return ax, ay, az, gx, gy, gz
-
-bank(0)
-if read(0x00) == CHIP_ID:
-    print("ICM20948 Found!")
-else:
-    print("Unable to find ICM20940")
-
-write(0x06, 0x01)
-# write(0x03, 0x78)  # Don't do this
-write(0x07, 0x00)
-
-bank(2)
-write(0x00, 0x0A)  # 100Hz sample rate - 1.1 kHz / (1 + rate)
-write(0x01, 0b00101001)  # 250 dps
-
-# Accel sensitivity
-write(0x14, 0b00101111)  # +-16g
-
-# Accel sample rate divider MSB and LSB
-write(0x10, 0x00) # 125Hz - 1.125 kHz / (1 + rate)
-write(0x11, 0x08)
-
-
-bank(0)
-write(0x0f, 0x30)
-write(0x03, 0x20)
-
-bank(3)
-write(0x01, 0x4D) # I2C_MST_ODR_CONFIG
-write(0x02, 0x01) 
-write(0x05, 0x81)
-
-if mag_read(0x01) == AK09916_CHIP_ID:
-    print("Found AK09916")
-else:
-    print("Unable to find AK09916")
-
-mag_write(0x32, 0x01)
-while mag_read(0x32) == 0x01:
-    time.sleep(0.0001)
-
-while True:
-    x, y, z = read_magnetometer_data()
-    print(x, y, z)
-    ax, ay, az, gx, gy, gz = read_accelerometer_gyro_data()
-    print(ax, ay, az, gx, gy, gz)
-    time.sleep(0.25)
+        time.sleep(0.25)
