@@ -3,6 +3,7 @@ import struct
 
 CHIP_ID = 0xEA
 I2C_ADDR = 0x68
+I2C_ADDR_ALT = 0x69
 ICM20948_BANK_SEL = 0x7f
 
 ICM20948_I2C_MST_ODR_CONFIG = 0x00
@@ -71,7 +72,9 @@ class icm20948:
 
     def bank(self, value):
         """Switch register self.bank."""
-        self.write(ICM20948_BANK_SEL, value << 4)
+        if not self._bank == value:
+            self.write(ICM20948_BANK_SEL, value << 4)
+            self._bank = value
 
     def mag_write(self, reg, value):
         """Write a byte to the slave magnetometer."""
@@ -159,7 +162,56 @@ class icm20948:
 
         return ax, ay, az, gx, gy, gz
 
+    def set_accelerometer_sample_rate(self, rate=125):
+        """Set the accelerometer sample rate in Hz."""
+        self.bank(2)
+        # 125Hz - 1.125 kHz / (1 + rate)
+        rate = int((1125.0 / rate) - 1)
+        # TODO maybe use struct to pack and then write_bytes
+        self.write(ICM20948_ACCEL_SMPLRT_DIV_1, (rate >> 8) & 0xff)
+        self.write(ICM20948_ACCEL_SMPLRT_DIV_2, rate & 0xff)
+
+    def set_accelerometer_full_scale(self, scale=16):
+        """Set the accelerometer fulls cale range to +- the supplied value."""
+        self.bank(2)
+        value = self.read(ICM20948_ACCEL_CONFIG) & 0b11111001
+        value |= {2: 0b00, 4: 0b01, 8: 0b10, 16: 0b11}[scale] << 1
+        self.write(ICM20948_ACCEL_CONFIG, value)
+
+    def set_accelerometer_low_pass(self, enabled=True, mode=5):
+        """Configure the accelerometer low pass filter."""
+        self.bank(2)
+        value = self.read(ICM20948_ACCEL_CONFIG) & 0b10001110
+        if enabled:
+            value |= 0b1
+        value |= (mode & 0x07) << 4
+        self.write(ICM20948_ACCEL_CONFIG, value)
+
+    def set_gyro_sample_rate(self, rate=100):
+        """Set the gyro sample rate in Hz."""
+        self.bank(2)
+        # 100Hz sample rate - 1.1 kHz / (1 + rate)
+        rate = int((1100.0 / rate) - 1)
+        self.write(ICM20948_GYRO_SMPLRT_DIV, rate)
+
+    def set_gyro_full_scale(self, scale=250):
+        """Set the gyro full scale range to +- supplied value."""
+        self.bank(2)
+        value = self.read(ICM20948_GYRO_CONFIG_1) & 0b11111001
+        value |= {250: 0b00, 500: 0b01, 1000: 0b10, 2000: 0b11}[scale] << 1
+        self.write(ICM20948_GYRO_CONFIG_1, value)
+
+    def set_gyro_low_pass(self, enabled=True, mode=5):
+        """Configure the gyro low pass filter."""
+        self.bank(2)
+        value = self.read(ICM20948_GYRO_CONFIG_1) & 0b10001110
+        if enabled:
+            value |= 0b1
+        value |= (mode & 0x07) << 4
+        self.write(ICM20948_GYRO_CONFIG_1, value)
+
     def __init__(self, i2c_addr=I2C_ADDR, i2c_bus=None):
+        self._bank = -1
         self._addr = i2c_addr
 
         if i2c_bus is None:
@@ -169,27 +221,21 @@ class icm20948:
             self._bus = i2c_bus
 
         self.bank(0)
-        if self.read(ICM20948_WHO_AM_I) == CHIP_ID:
-            print("Found ICM20948!")
-        else:
-            print("Unable to find ICM20940")
+        if not self.read(ICM20948_WHO_AM_I) == CHIP_ID:
+            raise RuntimeError("Unable to find ICM20940")
 
         self.write(ICM20948_PWR_MGMT_1, 0x01)
         self.write(ICM20948_PWR_MGMT_2, 0x00)
 
         self.bank(2)
 
-        # 100Hz sample rate - 1.1 kHz / (1 + rate)
-        self.write(ICM20948_GYRO_SMPLRT_DIV, 0x0A)
-        self.write(ICM20948_GYRO_CONFIG_1, 0b00101001)  # 250 dps
+        self.set_gyro_sample_rate(100)
+        self.set_gyro_low_pass(enabled=True, mode=5)
+        self.set_gyro_full_scale(250)
 
-        # Accel sensitivity
-        self.write(ICM20948_ACCEL_CONFIG, 0b00101111)  # +-16g
-
-        # Accel sample rate divider MSB and LSB
-        # 125Hz - 1.125 kHz / (1 + rate)
-        self.write(ICM20948_ACCEL_SMPLRT_DIV_1, 0x00)
-        self.write(ICM20948_ACCEL_SMPLRT_DIV_2, 0x08)
+        self.set_accelerometer_sample_rate(125)
+        self.set_accelerometer_low_pass(enabled=True, mode=5)
+        self.set_accelerometer_full_scale(16)
 
         self.bank(0)
         self.write(ICM20948_INT_PIN_CFG, 0x30)
@@ -199,10 +245,8 @@ class icm20948:
         self.write(ICM20948_I2C_MST_CTRL, 0x4D)
         self.write(ICM20948_I2C_MST_DELAY_CTRL, 0x01)
 
-        if self.mag_read(AK09916_WIA) == AK09916_CHIP_ID:
-            print("Found AK09916")
-        else:
-            print("Unable to find AK09916")
+        if not self.mag_read(AK09916_WIA) == AK09916_CHIP_ID:
+            raise RuntimeError("Unable to find AK09916")
 
         # Reset the magnetometer
         self.mag_write(AK09916_CNTL3, 0x01)
