@@ -3,6 +3,16 @@
 import time
 from icm20948 import ICM20948
 
+print("""read-all.py
+
+Reads all ranges of movement: accelerometer, gyroscope and
+
+compass heading.
+
+Press Ctrl+C to exit!
+
+""")
+
 imu = ICM20948()
 
 while True:

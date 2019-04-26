@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from icm20948 import ICM20948
 from rgbmatrix5x5 import RGBMatrix5x5
 from colorsys import hsv_to_rgb
