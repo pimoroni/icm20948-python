@@ -4,9 +4,17 @@ import math
 
 print("""magnetometer.py - Convert raw values to heading
 
+Rotate the sensor (X-axis upwards) through 360 degrees to calibrate.
+
 Press Ctrl+C to exit!
 
 """)
+
+X = 0
+Y = 1
+Z = 2
+
+AXES = Y, Z
 
 imu = ICM20948()
 
@@ -28,7 +36,10 @@ while True:
             pass
         mag[i] -= 0.5
 
-    heading = math.atan2(mag[1], mag[2])
+    heading = math.atan2(
+            mag[AXES[0]],
+            mag[AXES[1]])
+
     if heading < 0:
         heading += 2 * math.pi
     heading = math.degrees(heading)
