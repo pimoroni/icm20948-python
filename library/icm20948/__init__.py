@@ -64,7 +64,6 @@ class ICM20948:
     def read(self, reg):
         """Read byte from the sensor."""
         return self._bus.read_byte_data(self._addr, reg)
-        time.sleep(0.0001)
 
     def read_bytes(self, reg, length=1):
         """Read byte(s) from the sensor."""
