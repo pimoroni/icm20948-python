@@ -22,4 +22,4 @@ def test_temperature():
     from icm20948 import ICM20948
     icm20948 = ICM20948()
     temp_degrees = icm20948.read_temperature()
-    assert (round(temp_degrees, 2) = 24)
+    assert (round(temp_degrees, 2) == 24)
