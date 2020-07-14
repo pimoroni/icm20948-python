@@ -65,6 +65,12 @@ class ICM20948:
         """Read byte from the sensor."""
         return self._bus.read_byte_data(self._addr, reg)
 
+    def trigger_mag_io(self):
+        user = self.read(ICM20948_USER_CTRL)
+        self.write(ICM20948_USER_CTRL, user | 0x20)
+        time.sleep(0.005)
+        self.write(ICM20948_USER_CTRL, user)
+
     def read_bytes(self, reg, length=1):
         """Read byte(s) from the sensor."""
         return self._bus.read_i2c_block_data(self._addr, reg, length)
@@ -82,15 +88,19 @@ class ICM20948:
         self.write(ICM20948_I2C_SLV0_REG, reg)
         self.write(ICM20948_I2C_SLV0_DO, value)
         self.bank(0)
+        self.trigger_mag_io()
 
     def mag_read(self, reg):
         """Read a byte from the slave magnetometer."""
         self.bank(3)
-        self.write(ICM20948_I2C_SLV0_CTRL, 0x80 | 1)  # Read 1 byte
         self.write(ICM20948_I2C_SLV0_ADDR, AK09916_I2C_ADDR | 0x80)
         self.write(ICM20948_I2C_SLV0_REG, reg)
         self.write(ICM20948_I2C_SLV0_DO, 0xff)
+        self.write(ICM20948_I2C_SLV0_CTRL, 0x80 | 1)  # Read 1 byte
+
         self.bank(0)
+        self.trigger_mag_io()
+
         return self.read(ICM20948_EXT_SLV_SENS_DATA_00)
 
     def mag_read_bytes(self, reg, length=1):
@@ -101,15 +111,20 @@ class ICM20948:
         self.write(ICM20948_I2C_SLV0_REG, reg)
         self.write(ICM20948_I2C_SLV0_DO, 0xff)
         self.bank(0)
+        self.trigger_mag_io()
+
         return self.read_bytes(ICM20948_EXT_SLV_SENS_DATA_00, length)
 
     def magnetometer_ready(self):
         """Check the magnetometer status self.ready bit."""
         return self.mag_read(AK09916_ST1) & 0x01 > 0
 
-    def read_magnetometer_data(self):
+    def read_magnetometer_data(self, timeout=1.0):
         self.mag_write(AK09916_CNTL2, 0x01)  # Trigger single measurement
+        t_start = time.time()
         while not self.magnetometer_ready():
+            if time.time() - t_start > timeout:
+                raise RuntimeError("Timeout waiting for Magnetometer Ready")
             time.sleep(0.00001)
 
         data = self.mag_read_bytes(AK09916_HXL, 6)
@@ -238,7 +253,6 @@ class ICM20948:
 
         self.bank(0)
         self.write(ICM20948_INT_PIN_CFG, 0x30)
-        self.write(ICM20948_USER_CTRL, 0x20)
 
         self.bank(3)
         self.write(ICM20948_I2C_MST_CTRL, 0x4D)
