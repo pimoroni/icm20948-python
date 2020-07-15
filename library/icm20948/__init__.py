@@ -34,6 +34,14 @@ ICM20948_ACCEL_CONFIG = 0x14
 ICM20948_ACCEL_XOUT_H = 0x2D
 ICM20948_GRYO_XOUT_H = 0x33
 
+ICM20948_TEMP_OUT_H = 0x39
+ICM20948_TEMP_OUT_L = 0x3A
+
+# Offset and sensitivity - defined in electrical characteristics, and TEMP_OUT_H/L of datasheet
+ICM20948_TEMPERATURE_DEGREES_OFFSET = 21
+ICM20948_TEMPERATURE_SENSITIVITY = 333.87
+ICM20948_ROOM_TEMP_OFFSET = 21
+
 AK09916_I2C_ADDR = 0x0c
 AK09916_CHIP_ID = 0x09
 AK09916_WIA = 0x01
@@ -209,6 +217,15 @@ class ICM20948:
         value |= (mode & 0x07) << 4
         self.write(ICM20948_GYRO_CONFIG_1, value)
 
+    def read_temperature(self):
+        """Property to read the current IMU temperature"""
+        # PWR_MGMT_1 defaults to leave temperature enabled
+        self.bank(0)
+        temp_raw_bytes = self.read_bytes(ICM20948_TEMP_OUT_H, 2)
+        temp_raw = struct.unpack('>h', bytearray(temp_raw_bytes))[0]
+        temperature_deg_c = ((temp_raw - ICM20948_ROOM_TEMP_OFFSET) / ICM20948_TEMPERATURE_SENSITIVITY) + ICM20948_TEMPERATURE_DEGREES_OFFSET
+        return temperature_deg_c
+    
     def __init__(self, i2c_addr=I2C_ADDR, i2c_bus=None):
         self._bank = -1
         self._addr = i2c_addr

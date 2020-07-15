@@ -34,3 +34,6 @@ class MockSMBus():
                 555,
                 666
             ))
+        # temperature data
+        if length == 2:
+            return struct.pack(">h", 0x400)
