@@ -240,7 +240,7 @@ class ICM20948:
         temp_raw = struct.unpack('>h', bytearray(temp_raw_bytes))[0]
         temperature_deg_c = ((temp_raw - ICM20948_ROOM_TEMP_OFFSET) / ICM20948_TEMPERATURE_SENSITIVITY) + ICM20948_TEMPERATURE_DEGREES_OFFSET
         return temperature_deg_c
-    
+
     def __init__(self, i2c_addr=I2C_ADDR, i2c_bus=None):
         self._bank = -1
         self._addr = i2c_addr
