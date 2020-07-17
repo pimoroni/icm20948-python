@@ -1,12 +1,9 @@
 import sys
 import mock
 import pytest
-from .tools import MockSMBus
 
 
-def test_setup():
-    sys.modules['smbus'] = mock.Mock()
-
+def test_setup(smbus_fail):
     from icm20948 import ICM20948
 
     with pytest.raises(RuntimeError):
@@ -14,11 +11,7 @@ def test_setup():
         del icm20948
 
 
-def test_setup_present():
-    smbus = mock.Mock()
-    smbus.SMBus = MockSMBus
-    sys.modules['smbus'] = smbus
-
+def test_setup_present(smbus):
     from icm20948 import ICM20948
     icm20948 = ICM20948()
     del icm20948
