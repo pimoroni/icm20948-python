@@ -236,6 +236,8 @@ fi
 
 printf "\n"
 
+cd library
+
 if [ -f "/usr/bin/pydoc" ]; then
 	printf "Generating documentation.\n"
 	pydoc -w $LIBRARY_NAME > /dev/null
