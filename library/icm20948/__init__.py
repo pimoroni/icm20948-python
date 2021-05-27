@@ -211,10 +211,10 @@ class ICM20948:
         value |= (mode & 0x07) << 4
         self.write(ICM20948_ACCEL_CONFIG, value)
 
-    def set_gyro_sample_rate(self, rate=100):
+    def set_gyro_sample_rate(self, rate=125):
         """Set the gyro sample rate in Hz."""
         self.bank(2)
-        # 100Hz sample rate - 1.1 kHz / (1 + rate)
+        # 125Hz sample rate - 1.125 kHz / (1 + rate)
         rate = int((1125.0 / rate) - 1)
         self.write(ICM20948_GYRO_SMPLRT_DIV, rate)
 
