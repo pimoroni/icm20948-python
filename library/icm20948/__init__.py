@@ -215,7 +215,7 @@ class ICM20948:
         """Set the gyro sample rate in Hz."""
         self.bank(2)
         # 100Hz sample rate - 1.1 kHz / (1 + rate)
-        rate = int((1100.0 / rate) - 1)
+        rate = int((1125.0 / rate) - 1)
         self.write(ICM20948_GYRO_SMPLRT_DIV, rate)
 
     def set_gyro_full_scale(self, scale=250):
