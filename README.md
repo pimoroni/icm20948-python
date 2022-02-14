@@ -1,6 +1,6 @@
 # ICM20948 9-DOF Accelerometer, Magnetometer and Gyroscope
 
-[![Build Status](https://shields.io/github/workflow/status/pimoroni/icm20948-python/Python%20Tests.svg)](https://github.com/pimoroni/icm2098-python/actions/workflows/test.yml)
+[![Build Status](https://shields.io/github/workflow/status/pimoroni/icm20948-python/Python%20Tests.svg)](https://github.com/pimoroni/icm20948-python/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pimoroni/icm20948-python/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/icm20948-python?branch=master)
 [![PyPi Package](https://img.shields.io/pypi/v/icm20948.svg)](https://pypi.python.org/pypi/icm20948)
 [![Python Versions](https://img.shields.io/pypi/pyversions/icm20948.svg)](https://pypi.python.org/pypi/icm20948)
