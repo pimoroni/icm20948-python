@@ -248,7 +248,7 @@ class ICM20948:
         self._addr = i2c_addr
 
         if i2c_bus is None:
-            from smbus import SMBus
+            from smbus2 import SMBus
             self._bus = SMBus(1)
         else:
             self._bus = i2c_bus
