@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import time
+
 from icm20948 import ICM20948
 
 print("""read-all.py

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-from icm20948 import ICM20948
-import time
-import math
 import argparse
+import math
 import os
 import signal
 import sys
+import time
+
+from icm20948 import ICM20948
 
 BAR_CHAR = u'\u2588'  # Unicode FULL BLOCK
 
