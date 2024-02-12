@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from icm20948 import ICM20948
-import time
 import math
+import time
+
+from icm20948 import ICM20948
 
 print("""magnetometer.py - Convert raw values to heading
 

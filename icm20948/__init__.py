@@ -1,5 +1,5 @@
-import time
 import struct
+import time
 
 __version__ = '0.0.2'
 
