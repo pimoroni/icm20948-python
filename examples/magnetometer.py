@@ -47,7 +47,7 @@ while True:
         # Calibrate value by removing any offset when compared to the lowest reading seen for this axes
         mag[i] -= amin[i]
 
-        # Scale value based on the higest range of values seen for this axes
+        # Scale value based on the highest range of values seen for this axes
         # Creates a calibrated value between 0 and 1 representing magnetic value
         try:
             mag[i] /= amax[i] - amin[i]
