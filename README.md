@@ -5,15 +5,31 @@
 [![PyPi Package](https://img.shields.io/pypi/v/icm20948.svg)](https://pypi.python.org/pypi/icm20948)
 [![Python Versions](https://img.shields.io/pypi/pyversions/icm20948.svg)](https://pypi.python.org/pypi/icm20948)
 
+
 # Installing
 
-Stable library from PyPi:
+If you've already set up a Python virtual environment, you can also install the stable library manually from PyPi:
 
-* Just run `python3 -m pip install icm20948`
+```
+pip install icm20948
+```
+
+Otherwise our install script will set one up for you.
+
+Stable library from GitHub:
+
+```
+git clone https://github.com/pimoroni/icm20948-python
+cd icm20948-python
+./install.sh
+```
 
 Latest/development library from GitHub:
 
-* `git clone https://github.com/pimoroni/icm20948-python`
-* `cd icm20948-python`
-* `./install.sh --unstable`
+```
+git clone https://github.com/pimoroni/icm20948-python
+cd icm20948-python
+./install.sh --unstable
+```
 
+**Note** Libraries will be installed in the "pimoroni" virtual environment, you will need to activate it to run examples:
