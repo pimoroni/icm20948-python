@@ -1,7 +1,7 @@
-import time
 import struct
+import time
 
-__version__ = '0.0.2'
+__version__ = '1.0.0'
 
 CHIP_ID = 0xEA
 I2C_ADDR = 0x68
@@ -248,7 +248,7 @@ class ICM20948:
         self._addr = i2c_addr
 
         if i2c_bus is None:
-            from smbus import SMBus
+            from smbus2 import SMBus
             self._bus = SMBus(1)
         else:
             self._bus = i2c_bus
@@ -295,11 +295,9 @@ if __name__ == "__main__":
         x, y, z = imu.read_magnetometer_data()
         ax, ay, az, gx, gy, gz = imu.read_accelerometer_gyro_data()
 
-        print("""
-Accel: {:05.2f} {:05.2f} {:05.2f}
-Gyro:  {:05.2f} {:05.2f} {:05.2f}
-Mag:   {:05.2f} {:05.2f} {:05.2f}""".format(
-            ax, ay, az, gx, gy, gz, x, y, z
-        ))
+        print(f"""
+Accel: {ax:05.2f} {ay:05.2f} {az:05.2f}
+Gyro:  {gx:05.2f} {gy:05.2f} {gz:05.2f}
+Mag:   {x:05.2f} {y:05.2f} {z:05.2f}""")
 
         time.sleep(0.25)

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-from icm20948 import ICM20948
-from rgbmatrix5x5 import RGBMatrix5x5
-from colorsys import hsv_to_rgb
-import time
 import math
+import time
+from colorsys import hsv_to_rgb
+
+from rgbmatrix5x5 import RGBMatrix5x5
+
+from icm20948 import ICM20948
 
 print("""magnetometer-to-rgb5x5.py - Convert heading to colour
 

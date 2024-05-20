@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from icm20948 import ICM20948
-import time
 import math
+import time
+
+from icm20948 import ICM20948
 
 print("""magnetometer.py - Convert raw values to heading
 
@@ -30,7 +31,7 @@ amax = list(imu.read_magnetometer_data())
 while True:
     # Read the current, uncalibrated, X, Y & Z magnetic values from the magnetometer and save as a list
     mag = list(imu.read_magnetometer_data())
-    
+
     # Step through each uncalibrated X, Y & Z magnetic value and calibrate them the best we can
     for i in range(3):
         v = mag[i]
@@ -42,11 +43,11 @@ while True:
         # ie save a new highest possible value for our calibration of this axis
         if v > amax[i]:
             amax[i] = v
-        
+
         # Calibrate value by removing any offset when compared to the lowest reading seen for this axes
         mag[i] -= amin[i]
-        
-        # Scale value based on the higest range of values seen for this axes
+
+        # Scale value based on the highest range of values seen for this axes
         # Creates a calibrated value between 0 and 1 representing magnetic value
         try:
             mag[i] /= amax[i] - amin[i]
@@ -64,13 +65,13 @@ while True:
     # If heading is negative, convert to positive, 2 x pi is a full circle in Radians
     if heading < 0:
         heading += 2 * math.pi
-        
+
     # Convert heading from Radians to Degrees
     heading = math.degrees(heading)
     # Round heading to nearest full degree
     heading = round(heading)
 
     # Note: Headings will not be correct until a full 360 deg calibration turn has been completed to generate amin and amax data
-    print("Heading: {}".format(heading))
+    print(f"Heading: {heading}")
 
     time.sleep(0.1)
