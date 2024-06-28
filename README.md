@@ -13,6 +13,8 @@ Detect movement in nine different ranges of motion: 3-axis acceleration, 3-axis 
 
 # Installing
 
+We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python ≥3.7.
+
 ## Full install (recommended):
 
 We've created an easy installation script that will install all pre-requisites and get you up and running with minimal efforts. To run it, fire up Terminal which you'll find in Menu -> Accessories -> Terminal on your Raspberry Pi desktop, as illustrated below:
