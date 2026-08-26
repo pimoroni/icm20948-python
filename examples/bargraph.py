@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import contextlib
 import math
 import os
 import signal
@@ -9,7 +10,7 @@ import time
 
 from icm20948 import ICM20948
 
-BAR_CHAR = u'\u2588'  # Unicode FULL BLOCK
+BAR_CHAR = '\u2588'  # Unicode FULL BLOCK
 
 running = True
 mingraphval = 0
@@ -29,9 +30,9 @@ def graphValue(value):
 
     bar_size = int((graphvalue / float(maxgraphval - mingraphval)) * (cols - 10))  # Scale bar_size to our terminal width
     bar = BAR_CHAR * bar_size        # Create a bar out of `bar_size` unicode FULL BLOCK characters
-    bar = bar.ljust(cols - 7, u' ')  # Pad the bar to the full with of the terminal, minus the value prefix
+    bar = bar.ljust(cols - 7, ' ')  # Pad the bar to the full with of the terminal, minus the value prefix
     sys.stdout.write("\r")           # Return the cursor to the beginning of the current line
-    sys.stdout.write(u"{:05.1f} {}".format(value, bar))  # Output our measurement and bar
+    sys.stdout.write(f"{value:05.1f} {bar}")  # Output our measurement and bar
     sys.stdout.flush()               # Flush the output buffer, since we're overdrawing the last line
 
 
@@ -98,10 +99,8 @@ while running:
         if v > amax[i]:
             amax[i] = v
         mag[i] -= amin[i]
-        try:
+        with contextlib.suppress(ZeroDivisionError):
             mag[i] /= amax[i] - amin[i]
-        except ZeroDivisionError:
-            pass
         mag[i] -= 0.5
 
     heading = math.atan2(mag[AXES[0]], mag[AXES[1]])
@@ -116,6 +115,6 @@ while running:
     else:
         # Round the heading value and print out directly
         heading = round(heading)
-        print("Heading: {}".format(heading))
+        print(f"Heading: {heading}")
 
     time.sleep(0.1)

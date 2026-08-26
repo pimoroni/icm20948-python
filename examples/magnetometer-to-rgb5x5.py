@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import contextlib
 import math
 import time
 from colorsys import hsv_to_rgb
@@ -44,10 +45,8 @@ while True:
         if v > amax[i]:
             amax[i] = v
         mag[i] -= amin[i]
-        try:
+        with contextlib.suppress(ZeroDivisionError):
             mag[i] /= amax[i] - amin[i]
-        except ZeroDivisionError:
-            pass
         mag[i] -= 0.5
 
     heading = math.atan2(
@@ -57,12 +56,12 @@ while True:
     if heading < 0:
         heading += 2 * math.pi
     heading = math.degrees(heading)
-    heading = int(round(heading))
+    heading = round(heading)
 
 
     r, g, b = [int(c * 255.0) for c in hsv_to_rgb(heading / 360.0, 1.0, 1.0)]
 
-    print("Heading: {:3d} Color: #{:02X}{:02X}{:02X}".format(heading, r, g, b))
+    print(f"Heading: {heading:3d} Color: #{r:02X}{g:02X}{b:02X}")
 
     rgbmatrix5x5.set_all(r, g, b)
     rgbmatrix5x5.show()

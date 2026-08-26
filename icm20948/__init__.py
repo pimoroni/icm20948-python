@@ -87,7 +87,7 @@ class ICM20948:
 
     def bank(self, value):
         """Switch register self.bank."""
-        if not self._bank == value:
+        if self._bank != value:
             self.write(ICM20948_BANK_SEL, value << 4)
             self._bank = value
 

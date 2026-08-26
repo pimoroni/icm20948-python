@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import contextlib
 import math
 import time
 
@@ -49,10 +50,8 @@ while True:
 
         # Scale value based on the highest range of values seen for this axes
         # Creates a calibrated value between 0 and 1 representing magnetic value
-        try:
+        with contextlib.suppress(ZeroDivisionError):
             mag[i] /= amax[i] - amin[i]
-        except ZeroDivisionError:
-            pass
         # Shift magnetic values to between -0.5 and 0.5 to enable the trig to work
         mag[i] -= 0.5
 

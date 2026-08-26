@@ -1,7 +1,7 @@
 import struct
 
 
-class MockSMBus():
+class MockSMBus:
     def __init__(self, bus):
         self.regs = [[0 for x in range(255)] for x in range(4)]
         self.bank = 0
