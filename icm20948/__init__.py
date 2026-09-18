@@ -1,7 +1,11 @@
 import struct
 import time
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = '1.0.0'
+try:
+    __version__ = version("icm20948")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 CHIP_ID = 0xEA
 I2C_ADDR = 0x68
